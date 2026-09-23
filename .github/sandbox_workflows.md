@@ -21,7 +21,10 @@ This documentation provides an overview of two GitHub Actions workflows used for
 
 The two GitHub Actions workflows automate the process of triggering AWS CodePipeline executions in response to various GitHub events. They leverage GitHub's OpenID Connect (OIDC) feature for secure authentication with AWS and manage both sandbox and production environments.
 
-  Sandbox Management: Handles the creation and updating of sandbox environments when pull requests are opened, reopened, or synchronized (new commits pushed).
+  Sandbox Management: Handles sandbox creation only when a maintainer adds the
+  `deploy-sandbox` label to an open, same-repository pull request. It does not
+  rebuild automatically when new commits are pushed; remove and re-add the label
+  to request another sandbox execution.
   Trigger Sandbox Deletion: Initiates the deletion of sandbox environments when a pull request is closed on the main branch.
 
 ## Prerequisites
@@ -39,7 +42,14 @@ Filename: .github/workflows/sandbox-creating.yml
 
 Triggers:
 
-  pull_request: When a pull request is opened, reopened, or synchronized (new commits pushed), trigger the sandbox creation/update pipeline. The PR number is read directly from the pull_request event payload (github.event.pull_request.number); no GitHub token or API lookup is used.
+  pull_request labeled: When a maintainer adds `deploy-sandbox` to an open,
+  same-repository pull request, trigger the sandbox creation pipeline. The PR
+  number is read directly from the pull_request event payload
+  (github.event.pull_request.number); no GitHub token or API lookup is used.
+
+  Re-run behavior: adding any other label, adding `deploy-sandbox` to a closed
+  PR, and pushing additional commits do not start the pipeline. To deliberately
+  rebuild an open PR sandbox, remove and re-add `deploy-sandbox`.
 
 Token check: before starting the pipeline execution, the check-tokens job reads the expires_at of the GitHub-token secret in AWS Secrets Manager for the test and the production account and logs whether each token exists, has expired, or is missing. It reports only; it rotates nothing and dispatches no event.
 

@@ -50,10 +50,10 @@
 //      write whose variable or value the gate cannot read is reported too:
 //      fail closed rather than guess. A line that only reads the file
 //      (`test -w "$GITHUB_ENV"`) is not a write.
-//   G. The sandbox lifecycle is symmetric. The workflow that starts the
-//      `sandbox-creation` CodePipeline must run on `pull_request` and nothing
-//      else, never on the `closed` type (which would provision the sandbox
-//      again as it is torn down), and the workflow that starts
+//   G. The sandbox lifecycle is symmetric and opt-in. The workflow that starts
+//      the `sandbox-creation` CodePipeline must run only on the
+//      `pull_request` `labeled` type, so a billed execution needs an explicit
+//      PR label; the workflow that starts
 //      `sandbox-deletion` must run on `pull_request` with `closed` as its only
 //      type and on nothing else. Every provisioned
 //      environment is billed until the deletion pipeline reclaims it, and
@@ -132,6 +132,7 @@ const SANDBOX_PIPELINE_START = /\baws\s+codepipeline\s+start-pipeline-execution\
 const SANDBOX_CREATION_PIPELINE = 'sandbox-creation';
 const SANDBOX_DELETION_PIPELINE = 'sandbox-deletion';
 const SANDBOX_CREATION_TRIGGER = 'pull_request';
+const SANDBOX_CREATION_TYPE = 'labeled';
 const SANDBOX_TEARDOWN_TYPE = 'closed';
 const RELEASE_ACTIONS = [
   'actions/create-release',
@@ -852,13 +853,14 @@ function assertSandboxCreationOnlyOnPullRequests(workflows) {
       fail('G', creatorTriggerFailure(workflow.file, extra));
       return;
     }
-    if (pullRequestTypesOf(workflow.triggers).includes(SANDBOX_TEARDOWN_TYPE)) {
+    const types = pullRequestTypesOf(workflow.triggers);
+    if (types.length !== 1 || types[0] !== SANDBOX_CREATION_TYPE) {
       fail(
         'G',
         `${WORKFLOW_DIR}/${workflow.file} starts the "${SANDBOX_CREATION_PIPELINE}" pipeline on ` +
-          `${SANDBOX_CREATION_TRIGGER} type "${SANDBOX_TEARDOWN_TYPE}", the event that starts ` +
-          'the deletion pipeline: the sandbox would be provisioned again as it is torn down ' +
-          `and orphaned. Remove "${SANDBOX_TEARDOWN_TYPE}" from its types.`
+          `${SANDBOX_CREATION_TRIGGER} types ${JSON.stringify(types)}. Keep ` +
+          `"${SANDBOX_CREATION_TYPE}" as its only type so billed sandbox creation requires ` +
+          'an explicit PR label and cannot race close-triggered teardown.'
       );
     }
   });
