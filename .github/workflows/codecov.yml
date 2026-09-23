@@ -73,7 +73,7 @@ jobs:
       # turn every pull request red for a configuration gap no pull request can fix;
       # the moment the secret exists, the gate fails closed on its own.
       - name: Upload client coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/client/lcov.info
@@ -82,7 +82,7 @@ jobs:
           fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
 
       - name: Upload server coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/server/lcov.info
@@ -91,7 +91,7 @@ jobs:
           fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
 
       - name: Upload edge coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/edge/lcov.info
@@ -100,7 +100,7 @@ jobs:
           fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
 
       - name: Upload integration coverage to Codecov
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/integration/lcov.info
