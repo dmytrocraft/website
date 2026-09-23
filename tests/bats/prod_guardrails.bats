@@ -958,7 +958,7 @@ PY
   # so the located provisioner passed while never being able to run for a pull
   # request. A missing `on:` reaches the parser the same way.
   local sandbox="$FIXTURE/.github/workflows/sandbox-creating.yml"
-  sed -i '/^on:$/,/^    types: \[opened, reopened, synchronize\]$/c\on: {}' "$sandbox"
+  sed -i '/^on:$/,/^    types: \[labeled\]$/c\on: {}' "$sandbox"
   grep -q '^on: {}$' "$sandbox"
 
   run_guardrails
@@ -968,19 +968,18 @@ PY
   assert_output_contains 'no pull_request trigger at all'
 }
 
-@test "fails when the sandbox creator also provisions on the closed type" {
-  # Review finding on #482: `closed` is the deleter's event. A creator listing it
-  # would start the creation pipeline while the deletion pipeline runs, leaving
-  # a freshly provisioned sandbox with no pull request left to close.
+@test "fails when the sandbox creator accepts an automatic PR event" {
+  # Only an explicit label may incur the sandbox cost; synchronize would put
+  # every later commit back on the paid creation path.
   local sandbox="$FIXTURE/.github/workflows/sandbox-creating.yml"
-  sed -i 's/^    types: \[opened, reopened, synchronize\]$/    types: [opened, reopened, synchronize, closed]/' "$sandbox"
-  grep -q 'synchronize, closed\]' "$sandbox"
+  sed -i 's/^    types: \[labeled\]$/    types: [labeled, synchronize]/' "$sandbox"
+  grep -q 'labeled, synchronize\]' "$sandbox"
 
   run_guardrails
   [ "$status" -eq 1 ]
   assert_output_contains '[G]'
-  assert_output_contains 'sandbox-creating.yml starts the "sandbox-creation" pipeline on pull_request type "closed"'
-  assert_output_contains 'provisioned again as it is torn down'
+  assert_output_contains 'sandbox-creating.yml starts the "sandbox-creation" pipeline on pull_request types ["labeled","synchronize"]'
+  assert_output_contains 'Keep "labeled" as its only type'
 }
 
 @test "fails when the sandbox creator is triggered by push instead of pull_request" {

@@ -189,9 +189,6 @@
     "nightly dependency cve census": "Scheduled leg: its if: excludes pull_request.",
     "external": "Scheduled leg of link check: its if: runs it on schedule only; offline is the PR leg.",
     "history": "Scheduled leg of secrets scanning: its if: excludes pull_request; gitleaks is the PR leg.",
-    "RFC 9116 policy": "Non-PR leg: its if: excludes pull_request; make lint-security-txt runs inside static on every PR.",
-    "check-tokens": "Sandbox preview deploy: depends on AWS availability and is skipped on forks; it previews a change rather than gating one.",
-    "deploy": "Sandbox preview deploy, as for check-tokens.",
-    "post-create smoke test": "Sandbox preview smoke: skipped until SANDBOX_SITE_URL_TEMPLATE is set, and it probes the sandbox, not the change."
+    "RFC 9116 policy": "Non-PR leg: its if: excludes pull_request; make lint-security-txt runs inside static on every PR."
   }
 }

@@ -2,7 +2,10 @@ name: sandbox
 
 on:
   pull_request:
-    types: [opened, reopened, synchronize]
+    # A maintainer explicitly requests the billed sandbox by adding this label.
+    # `labeled` is deliberately the only creation event: later commits do not
+    # launch another CodePipeline execution unless the label is re-applied.
+    types: [labeled]
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION }}
@@ -21,8 +24,12 @@ concurrency:
 jobs:
   check-tokens:
     # Same-repo guard: fork PRs receive no OIDC id-token and no secrets, so the
-    # prod-account role assumptions below can only run for branches in this repo.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # role assumptions below can only run for branches in this repo. The open
+    # state avoids creating a sandbox after its close-triggered teardown.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.state == 'open' &&
+      github.event.label.name == 'deploy-sandbox'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -127,8 +134,12 @@ jobs:
 
   deploy:
     # Same-repo guard: fork PRs receive no OIDC id-token, so the prod-account
-    # sandbox-creation trigger can only run for branches in this repo.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # sandbox-creation trigger can only run for branches in this repo. A closed
+    # PR has already started teardown, so a later label must not recreate it.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.state == 'open' &&
+      github.event.label.name == 'deploy-sandbox'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: [check-tokens]

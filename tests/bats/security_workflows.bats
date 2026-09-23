@@ -396,6 +396,29 @@ assert_same_repo_guard() {
   done < <(sandbox_workflows)
 }
 
+@test "sandbox creation requires deploy-sandbox on an open pull request" {
+  # A labeled event can still be delivered for a closed PR. Both role-assuming
+  # jobs must reject that state so a late label cannot recreate a torn-down
+  # sandbox, while commits remain free of sandbox-triggered AWS executions.
+  PROJECT_ROOT="$PROJECT_ROOT" node -e '
+    const fs = require("fs");
+    const yaml = require(process.env.PROJECT_ROOT + "/node_modules/js-yaml");
+    const doc = yaml.load(fs.readFileSync(process.argv[1], "utf8"));
+    const types = doc.on && doc.on.pull_request && doc.on.pull_request.types;
+    if (JSON.stringify(types) !== JSON.stringify(["labeled"])) process.exit(1);
+    for (const job of ["check-tokens", "deploy"]) {
+      const condition = doc.jobs && doc.jobs[job] && doc.jobs[job].if;
+      for (const required of [
+        "github.event.pull_request.head.repo.full_name == github.repository",
+        "github.event.pull_request.state == '\''open'\''",
+        "github.event.label.name == '\''deploy-sandbox'\''",
+      ]) {
+        if (!condition || !condition.includes(required)) process.exit(1);
+      }
+    }
+  ' "$WORKFLOWS_DIR/sandbox-creating.yml"
+}
+
 @test "the same-repo guard assertion rejects a guard that exists only in a comment" {
   # The shape the old substring search let through: the job-level `if:` is gone,
   # and the guard text survives only in a comment and a `run:` body.
